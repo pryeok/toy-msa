@@ -9,6 +9,8 @@ import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
@@ -38,14 +40,18 @@ public class UserServiceImpl implements UserService {
     // 여기에서 OdererServiceClient에 대해서 주입
     OrderServiceClient orderServiceClient;
 
+    // resilience4j를 통한 주입
+    CircuitBreakerFactory circuitBreakerFactory;
+
     public UserServiceImpl(Environment env, UserRepository userRepository,
                            BCryptPasswordEncoder passwordEncoder, RestTemplate restTemplate,
-                           OrderServiceClient orderServiceClient) {
+                           OrderServiceClient orderServiceClient,  CircuitBreakerFactory circuitBreakerFactory) {
         this.env = env;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.restTemplate = restTemplate;
         this.orderServiceClient = orderServiceClient;
+        this.circuitBreakerFactory = circuitBreakerFactory;
     }
 
     @Override
@@ -103,7 +109,15 @@ public class UserServiceImpl implements UserService {
 //        }
 
         /* using a feignclient with errordecoder */
-        List<ResponseOrder> orderList = orderServiceClient.getOrders(userId);
+//        List<ResponseOrder> orderList = orderServiceClient.getOrders(userId);
+
+        log.info("Before call orders microservice");
+        /* using a circuitBreaker with resilience4j */
+        CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitbreaker");
+        List<ResponseOrder> orderList = circuitBreaker.run(() -> orderServiceClient.getOrders(userId),
+                throwable -> new ArrayList<>());
+        log.info("After called orders microservice");
+
         userDto.setOrders(orderList);
 
         return userDto;

@@ -28,12 +28,15 @@ spring:
   security:
     user:
       name: user
-      password: $2a$10$g70rRcQBR7Jnm9A9m/Nqje8lCIPeADz2.VBMxhPyzUBoJc28pvC9.
+      password: 1234
+#      password: $2a$10$g70rRcQBR7Jnm9A9m/Nqje8lCIPeADz2.VBMxhPyzUBoJc28pvC9.
 
 logging:
   level:
     org.springframework.security: DEBUG
     com.example.userservice.client: DEBUG # Feign Client에 대한 Log Level
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"  # 이 줄 추가!
 
 eureka:
   instance:
@@ -59,6 +62,13 @@ management:
           - refresh
           - health
           - beans
-          - info
           - busrefresh
-
+          - info
+          - metrics
+          - prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans

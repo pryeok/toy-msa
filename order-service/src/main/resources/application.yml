@@ -10,14 +10,19 @@ spring:
       settings:
         web-allow-others: true
       path: /h2-console
-  datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;
-    username: sa
-    password:
   jpa:
     hibernate:
       ddl-auto: update
+  datasource:
+#    url: jdbc:mariadb://localhost:3307/mydb
+#    driver-class-name: org.mariadb.jdbc.Driver
+#    username: root
+#    password: qkrfur124$
+      driver-class-name: org.h2.Driver
+      url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;
+#    username: sa
+#    password:
+
 
 eureka:
   instance:
@@ -31,3 +36,27 @@ eureka:
 logging:
   level:
     org.springframework.security: DEBUG
+  pattern: # zipkin에 대한 로깅
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"  # 이 줄 추가!
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - refresh
+          - health
+          - beans
+          - httpexchanges
+          - busrefresh
+          - info
+          - metrics
+          - prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+
